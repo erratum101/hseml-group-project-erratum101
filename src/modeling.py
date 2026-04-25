@@ -1,52 +1,124 @@
-# modeling.py
 """
-Модуль для обучения и оценки моделей
+Classification modeling pipeline for Olist dataset
 """
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.metrics import mean_squared_error
 
-def train_linear_regression(X_train, y_train):
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    return model
+import pandas as pd
+import os
+import joblib
 
-def train_knn(X_train, y_train):
-    model = KNeighborsRegressor()
-    model.fit(X_train, y_train)
-    return model
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.metrics import f1_score, roc_auc_score
 
-def train_random_forest(X_train, y_train, random_state=42):
-    model = RandomForestRegressor(random_state=random_state)
-    model.fit(X_train, y_train)
-    return model
 
-def evaluate_model(model, X_test, y_test):
-    y_pred = model.predict(X_test)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
-    return rmse
+# =========================
+# PATHS (FIXED)
+# =========================
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "df_model.csv")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 
-import xgboost as xgb
-import lightgbm as lgb
-from sklearn.model_selection import GridSearchCV
-import numpy as np
 
-def train_xgboost(X_train, y_train, random_state=42):
-    model = xgb.XGBRegressor(random_state=random_state)
-    model.fit(X_train, y_train)
-    return model
+# =========================
+# LOAD DATA
+# =========================
+def load_data():
+    return pd.read_csv(DATA_PATH)
 
-def train_lightgbm(X_train, y_train, random_state=42):
-    model = lgb.LGBMRegressor(random_state=random_state)
-    model.fit(X_train, y_train)
-    return model
 
-def ensemble_predict(*preds):
-    return np.mean(preds, axis=0)
+# =========================
+# MAIN
+# =========================
+if __name__ == "__main__":
 
-def grid_search_rf(X_train, y_train):
-    param_grid = {'n_estimators': [50, 100], 'max_depth': [None, 5, 10]}
-    gs = GridSearchCV(RandomForestRegressor(random_state=42), param_grid, cv=3, scoring='neg_root_mean_squared_error')
-    gs.fit(X_train, y_train)
-    return gs.best_estimator_, gs.best_params_, -gs.best_score_
+    print("🚀 Loading dataset...")
+
+    df = load_data()
+
+    features = [
+        "payment_value",
+        "price",
+        "freight_value",
+        "delivery_time_days",
+        "delivery_delay_days",
+        "review_text_length"
+    ]
+
+    target = "target"
+
+    X = df[features]
+    y = df[target]
+
+    # =========================
+    # SPLIT
+    # =========================
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y
+    )
+
+    # =========================
+    # MODELS
+    # =========================
+    models = {
+        "LogisticRegression": LogisticRegression(max_iter=1000),
+        "RandomForest": RandomForestClassifier(n_estimators=200, random_state=42),
+        "GradientBoosting": GradientBoostingClassifier()
+    }
+
+    results = []
+
+    print("\n📊 Training models...\n")
+
+    for name, model in models.items():
+
+        model.fit(X_train, y_train)
+
+        y_pred = model.predict(X_test)
+
+        # ROC-AUC (if possible)
+        if hasattr(model, "predict_proba"):
+            y_proba = model.predict_proba(X_test)[:, 1]
+            roc = roc_auc_score(y_test, y_proba)
+        else:
+            roc = None
+
+        f1 = f1_score(y_test, y_pred)
+
+        results.append({
+            "model": name,
+            "f1": f1,
+            "roc_auc": roc
+        })
+
+        print(f"{name} | F1 = {f1:.4f}")
+
+    # =========================
+    # RESULTS
+    # =========================
+    results_df = pd.DataFrame(results).sort_values("f1", ascending=False)
+
+    print("\n🏆 FINAL RESULTS")
+    print(results_df)
+
+    # =========================
+    # BEST MODEL
+    # =========================
+    best_model_name = results_df.iloc[0]["model"]
+    best_model_object = models[best_model_name]
+
+    print("\n✅ BEST MODEL:", best_model_name)
+
+    # =========================
+    # SAVE MODEL (FIXED)
+    # =========================
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    model_path = os.path.join(MODEL_DIR, "best_model.pkl")
+
+    joblib.dump(best_model_object, model_path)
+
+    print("\n💾 Model saved to:", model_path)

@@ -23,7 +23,7 @@
 
 **Датасет:** Olist Brazilian E-Commerce Dataset (Kaggle)
 
-**Источник:** Kaggle
+**Источник:** https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce 
 
 **Целевая переменная:**
 
@@ -69,6 +69,13 @@
 ```bash
 # 1. Клонировать репозиторий
 git clone https://github.com/erratum101/hseml-group-project-erratum101.git
+### Скачать данные
+
+# Датасет:
+# https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
+
+# Распаковать в:
+# data/raw/
 
 # 2. Перейти в папку проекта
 cd hseml-group-project-erratum101
@@ -85,9 +92,21 @@ source .venv/bin/activate
 
 # 5. Установить зависимости
 pip install -r requirements.txt
+### Подготовка данных
 
+
+python src/preprocessing.py
+### Обучение модели
+
+python src/modeling.py
 # 6. Запустить Jupyter Notebook
 jupyter notebook
+
+### Сохранение модели
+
+## Лучшая модель сохраняется в:
+
+models/best_model.pkl
 ```
 
 ## Данные
@@ -115,10 +134,10 @@ jupyter notebook
 
 | Модель                         | F1-score | ROC-AUC | Примечание |
 | ------------------------------ | -------- | ------- | --------------------------------- |
-| Baseline (Logistic Regression) | 0.4614 | 0.8103 | Базовая модель |
-| Random Forest                  | 0.3277 | 0.8208 | Улучшение качества                |
-| Gradient Boosting              | 0.3752 | 0.8409 | Основная экспериментальная модель |
-| Лучшая модель                  | 0.4614 | 0.8103 | Итоговая модель |
+| Baseline (Logistic Regression) | 0.390599| 0.820220 | Базовая модель |
+| Random Forest                  | 0.480309 | 0.827283 | Улучшение качества                |
+| Gradient Boosting              | 0.474260| 0.845590 | Основная экспериментальная модель |
+| Лучшая модель                  | 0.480309| 0.827283  | RandomForest |
 
 ## Отчёт
 

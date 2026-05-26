@@ -57,6 +57,8 @@
 │   ├── preprocessing.py
 │   └── modeling.py
 ├── tests/
+├── src/api.py                  # FastAPI (деплой)
+├── streamlit_app.py            # веб-форма для предсказания
 ├── report/report.md
 ├── Makefile
 ├── docker-compose.yml
@@ -85,7 +87,38 @@ make test
 
 Ноутбуки: `jupyter notebook` → папка `notebooks/`.
 
-Docker: `docker compose up --build`
+Docker (обучение): `docker compose up ml-pipeline --build`
+
+## Деплой (CP3)
+
+**FastAPI** (обязательно) — REST API для предсказаний:
+
+```bash
+# если модели ещё нет (демо на синтетике):
+make demo-model
+
+make serve-api
+# Swagger: http://127.0.0.1:8000/docs
+```
+
+**Streamlit** — простой интерфейс с полями признаков:
+
+```bash
+make serve-ui
+# http://127.0.0.1:8501
+```
+
+**Docker только API:**
+
+```bash
+docker compose up api --build
+```
+
+Пример запроса:
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d "{\"payment_value\":150,\"price\":120,\"freight_value\":25,\"items_count\":2,\"payment_installments\":3,\"delivery_time_days\":12,\"delivery_delay_days\":5,\"review_text_length\":80}"
+```
 
 ## Данные
 
@@ -141,4 +174,8 @@ make lint-flake8   # только flake8
 
 ## Отчёт
 
-Подробный отчёт с графиками и пояснениями: [`report/report.md`](report/report.md)
+Полный отчёт (8 обязательных разделов): [`report/report.md`](report/report.md)
+
+PDF: `make report-pdf` или `powershell scripts/build_report_pdf.ps1` (нужен Pandoc).
+
+Скриншоты для раздела «Деплой»: `report/assets/`. Ссылку на видео вставьте в секцию 7 отчёта.

@@ -6,3 +6,13 @@ services:
       - ./models:/app/models
     command: >
       sh -c "python src/preprocessing.py && python src/modeling.py && pytest tests/ -q"
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+    environment:
+      - MODEL_PATH=/app/models/best_model.pkl
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --app-dir src
